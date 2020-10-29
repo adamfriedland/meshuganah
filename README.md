@@ -17,7 +17,7 @@ let me = Species {
             taxonomy: "some_taxonomy".to_string(),
 };
 
-let repository = GenericRepository::<User>::new().await;
+let repository = GenericRepository::<Species>::new().await;
 
 repository.add_item(None, me).await;
 

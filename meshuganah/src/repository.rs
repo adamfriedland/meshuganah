@@ -202,7 +202,7 @@ impl<T: Model> RepositoryTrait<T> for GenericRepository<T> {
         filter: Document,
         options: O,
     ) -> Result<T, ()> {
-        let x = self.database.collection("name");
+        let x = self.database.collection("name").name(query, options);
         match self
             .get_collection()
             .find_one_and_delete(filter, options)
