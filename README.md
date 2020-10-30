@@ -1,6 +1,3 @@
-# Meshuganah
-A strongly typed ODM for the official Mongodb Rust driver, providing an easy to use abstraction.
-
 <h1 align="center">Meshuganah</h1>
 <div align="center">
     <strong>A strongly typed ODM for the official Mongodb Rust driver, providing an easy to use abstraction.</strong>
