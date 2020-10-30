@@ -95,11 +95,9 @@ impl<T: Model> RepositoryTrait<T> for GenericRepository<T> {
     async fn add_item(&self, filter: Option<Document>, mut item: T) {
         let model = Self::get_document(&item).unwrap();
 
-        // Ensure that journaling is set to true for this call, as we need to be able to get an ID back.
         let mut write_concern = Self::write_concern().unwrap_or_default();
         write_concern.journal = Some(true);
 
-        // Handle case where instance already has an ID.
         let filter = match (item.get_id(), filter) {
             (Some(id), _) => doc! {"_id": id},
             (None, None) => {
@@ -110,7 +108,6 @@ impl<T: Model> RepositoryTrait<T> for GenericRepository<T> {
             (None, Some(filter)) => filter,
         };
 
-        // Save the record by replacing it entirely, or upserting if it doesn't already exist.
         let opts = options::FindOneAndReplaceOptions::builder()
             .upsert(Some(true))
             .write_concern(Some(write_concern))
@@ -202,7 +199,6 @@ impl<T: Model> RepositoryTrait<T> for GenericRepository<T> {
         filter: Document,
         options: O,
     ) -> Result<T, ()> {
-        let x = self.database.collection("name").name(query, options);
         match self
             .get_collection()
             .find_one_and_delete(filter, options)
