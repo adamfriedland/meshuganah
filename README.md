@@ -24,3 +24,9 @@ repository.add_item(None, me).await;
 let found = repository.find_one(None, None).await.unwrap();
 
 ```
+
+# Work still needed to be done
+- Correct error handling
+- Migrations
+- Indexing
+- Extending more of the base client in a type safe way
