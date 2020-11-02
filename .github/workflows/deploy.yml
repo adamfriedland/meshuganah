@@ -18,3 +18,4 @@ jobs:
       run: cargo login ${{ secrets.CRATES }}
     - name: publish
       run: cargo publish
+      working-directory: meshuganah
