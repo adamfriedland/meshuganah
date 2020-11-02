@@ -16,6 +16,11 @@ jobs:
     steps:
       - name:                   Checkout repository
         uses:                   actions/checkout@v2
+      
+      - name: Set ENV for codeclimate (push)
+        run: |
+           rustup default nightly
+           rustup update
 
       - name:                   Generate code coverage
         run: |
