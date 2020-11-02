@@ -20,18 +20,21 @@ fn add_document_and_confirm_item() {
             taxonomy: "some_taxonomy".to_string(),
         };
 
-        let name = item.name.clone();
+        let added_item = repository
+            .add_item(None, item)
+            .await
+            .expect("failed to insert")
+            .expect("no item added");
 
-        repository.add_item(None, item).await;
-
-        let filter = doc! { "name": &name };
+        let filter = doc! { "name": &added_item.name };
 
         let found_item = repository
             .find_one(filter, None)
             .await
-            .expect("failed to retrieve item");
+            .expect("failed to retrieve item")
+            .expect("nothing to retrieve");
 
-        assert_eq!(found_item.name, name);
+        assert_eq!(found_item.name, added_item.name);
         assert_ne!(found_item.category, "some_other_category");
     });
 }
@@ -57,7 +60,10 @@ fn find_documents_and_confirm_length() {
             },
         ];
 
-        repository.add_many(collection, None).await;
+        repository
+            .add_many(collection, None)
+            .await
+            .expect("failed to insert items");
 
         let filter = doc! { "name": "some_other_name" };
 
@@ -86,13 +92,13 @@ fn delete_document_and_confirm_deletion() {
         };
         let name = item.name.clone();
 
-        repository.add_item(None, item).await;
+        repository
+            .add_item(None, item)
+            .await
+            .expect("failed to insert item");
 
         let query = doc! { "name": "some_name" };
-        let result = match repository.delete_item(query, None).await {
-            Ok(sucess) => sucess,
-            Err(_) => panic!("failed to delete item"),
-        };
+        let result = repository.delete_item(query, None).await.unwrap().unwrap();
 
         assert_eq!(result.name, name);
     });
@@ -119,13 +125,22 @@ fn delete_documents_and_confirm_deletion() {
             },
         ];
 
-        repository.add_many(collection, None).await;
+        repository
+            .add_many(collection, None)
+            .await
+            .expect("failed to insert items");
 
         let delete_query = doc! { "name": "some_other_name_to_delete" };
-        repository.delete_items(delete_query, None).await;
+        repository
+            .delete_items(delete_query, None)
+            .await
+            .expect("failed to delete items");
 
         let find_query = doc! { "name": "some_other_name_to_delete" };
-        let found_item = repository.find_one(find_query, None).await;
+        let found_item = repository
+            .find_one(find_query, None)
+            .await
+            .expect("failed to find item");
 
         assert!(found_item.is_none(), true);
     });
