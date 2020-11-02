@@ -3,8 +3,11 @@ use std::marker::PhantomData;
 use async_trait::async_trait;
 use mongodb::{
     bson::{self, doc, from_bson, oid::ObjectId, to_bson, Bson, Document},
+    error::Result,
     options,
     options::{DeleteOptions, FindOneAndDeleteOptions, InsertManyOptions},
+    results::DeleteResult,
+    results::InsertManyResult,
     Database,
 };
 
@@ -19,32 +22,29 @@ pub trait RepositoryTrait<T: Model> {
         None
     }
 
-    fn get_document(model: &T) -> Result<Document, ()> {
-        match to_bson(model) {
-            Ok(doc) => match doc {
-                Bson::Document(doc) => Ok(doc),
-                other => panic!("Returned incorrect type {}", other),
-            },
-            Err(err) => panic!("couldn't deserialize type {}", err),
+    fn get_document(model: &T) -> Result<Document> {
+        match to_bson(model)? {
+            Bson::Document(doc) => Ok(doc),
+            other => panic!("Returned incorrect type {:?}", other),
         }
     }
 
-    fn get_instance_from_document(document: Document) -> Result<T, ()> {
+    fn get_instance_from_document(document: Document) -> Result<T> {
         match from_bson::<T>(Bson::Document(document)) {
             Ok(doc) => Ok(doc),
-            Err(_) => panic!("Something went wrong"),
+            Err(_) => panic!("Failed to convert instance to type"),
         }
     }
 
     fn get_collection(&self) -> mongodb::Collection;
 
-    async fn add_item(&self, filter: Option<bson::Document>, item: T);
+    async fn add_item(&self, filter: Option<bson::Document>, item: T) -> Result<Option<T>>;
 
     async fn add_many<I: IntoIterator<Item = T> + Send, O: Into<Option<InsertManyOptions>> + Send>(
         &self,
         collection: I,
         options: O,
-    );
+    ) -> Result<InsertManyResult>;
 
     async fn find_one<
         F: Into<Option<Document>> + Send,
@@ -53,25 +53,25 @@ pub trait RepositoryTrait<T: Model> {
         &self,
         filter: F,
         options: O,
-    ) -> Option<T>;
+    ) -> Result<Option<T>>;
 
     async fn find<F: Into<Option<Document>> + Send, O: Into<Option<options::FindOptions>> + Send>(
         &self,
         filter: F,
         options: O,
-    ) -> Result<TypeCursor<T>, ()>;
+    ) -> Result<TypeCursor<T>>;
 
     async fn delete_item<O: Into<Option<FindOneAndDeleteOptions>> + Send>(
         &self,
         filter: Document,
         options: O,
-    ) -> Result<T, ()>;
+    ) -> Result<Option<T>>;
 
     async fn delete_items<O: Into<Option<DeleteOptions>> + Send>(
         &self,
         query: Document,
         options: O,
-    );
+    ) -> Result<DeleteResult>;
 }
 
 pub struct GenericRepository<T: Model> {
@@ -92,7 +92,7 @@ impl<T: Model> RepositoryTrait<T> for GenericRepository<T> {
         self.database.collection(T::COLLECTION_NAME)
     }
 
-    async fn add_item(&self, filter: Option<Document>, mut item: T) {
+    async fn add_item(&self, filter: Option<Document>, mut item: T) -> Result<Option<T>> {
         let model = Self::get_document(&item).unwrap();
 
         let mut write_concern = Self::write_concern().unwrap_or_default();
@@ -114,64 +114,13 @@ impl<T: Model> RepositoryTrait<T> for GenericRepository<T> {
             .return_document(Some(options::ReturnDocument::After))
             .build();
 
-        let updated_doc = self
-            .get_collection()
-            .find_one_and_replace(filter, model, opts)
-            .await;
-
-        match updated_doc {
-            Ok(test) => match test {
-                Some(document) => println!("document updated {:?}", document),
-                None => panic!("wrong document type returned"),
-            },
-            Err(err) => panic!("failed to update document {}", err),
-        };
-    }
-
-    async fn find_one<
-        F: Into<Option<Document>> + Send,
-        O: Into<Option<options::FindOneOptions>> + Send,
-    >(
-        &self,
-        filter: F,
-        options: O,
-    ) -> Option<T> {
-        match self.get_collection().find_one(filter, options).await {
-            Ok(success) => match success.map(Self::get_instance_from_document).transpose() {
-                Ok(item) => item,
-                Err(_) => panic!("Failed on type conversion"),
-            },
-            Err(_) => panic!("Failed to retrieve document"),
-        }
-    }
-
-    async fn find<
-        F: Into<Option<Document>> + Send,
-        O: Into<Option<options::FindOptions>> + Send,
-    >(
-        &self,
-        filter: F,
-        options: O,
-    ) -> Result<TypeCursor<T>, ()> {
         match self
             .get_collection()
-            .find(filter, options)
-            .await
-            .map(TypeCursor::<T>::new)
+            .find_one_and_replace(filter, model, opts)
+            .await?
         {
-            Ok(cursor) => Ok(cursor),
-            Err(_) => panic!(""),
-        }
-    }
-
-    async fn delete_items<O: Into<Option<DeleteOptions>> + Send>(
-        &self,
-        query: Document,
-        options: O,
-    ) {
-        match self.get_collection().delete_many(query, options).await {
-            Ok(success) => println!("Number of items deleted {:?}", success.deleted_count),
-            Err(_) => panic!("Delete failed"),
+            Some(document) => Ok(Some(Self::get_instance_from_document(document)?)),
+            None => Ok(None),
         }
     }
 
@@ -182,15 +131,42 @@ impl<T: Model> RepositoryTrait<T> for GenericRepository<T> {
         &self,
         collection: I,
         options: O,
-    ) {
+    ) -> Result<InsertManyResult> {
         let documents = collection
             .into_iter()
             .map(|item| Self::get_document(&item).expect("failed to serialize"))
             .collect::<Vec<Document>>();
 
-        match self.get_collection().insert_many(documents, options).await {
-            Ok(success) => println!("{}", success.inserted_ids.len()),
-            Err(_) => panic!("Failed to insert multiple documents"),
+        self.get_collection().insert_many(documents, options).await
+    }
+
+    async fn find<
+        F: Into<Option<Document>> + Send,
+        O: Into<Option<options::FindOptions>> + Send,
+    >(
+        &self,
+        filter: F,
+        options: O,
+    ) -> Result<TypeCursor<T>> {
+        self.get_collection()
+            .find(filter, options)
+            .await
+            .map(TypeCursor::<T>::new)
+    }
+
+    async fn find_one<
+        F: Into<Option<Document>> + Send,
+        O: Into<Option<options::FindOneOptions>> + Send,
+    >(
+        &self,
+        filter: F,
+        options: O,
+    ) -> Result<Option<T>> {
+        let document = self.get_collection().find_one(filter, options).await?;
+
+        match document {
+            Some(document) => Ok(Some(Self::get_instance_from_document(document)?)),
+            None => Ok(None),
         }
     }
 
@@ -198,14 +174,22 @@ impl<T: Model> RepositoryTrait<T> for GenericRepository<T> {
         &self,
         filter: Document,
         options: O,
-    ) -> Result<T, ()> {
+    ) -> Result<Option<T>> {
         match self
             .get_collection()
             .find_one_and_delete(filter, options)
-            .await
+            .await?
         {
-            Ok(success) => Self::get_instance_from_document(success.unwrap()),
-            Err(_) => panic!("Failed to find and delete"),
+            Some(doc) => Ok(Some(Self::get_instance_from_document(doc)?)),
+            None => Ok(None),
         }
+    }
+
+    async fn delete_items<O: Into<Option<DeleteOptions>> + Send>(
+        &self,
+        query: Document,
+        options: O,
+    ) -> Result<DeleteResult> {
+        self.get_collection().delete_many(query, options).await
     }
 }
