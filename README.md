@@ -33,7 +33,7 @@ while let Some(item) = cursor.next().await {
 ```
 
 # Work still needed to be done
-- Correct error handling
+- ~~Correct error handling~~
 - Migrations
 - Indexing
 - Extending more of the base client in a type safe way
