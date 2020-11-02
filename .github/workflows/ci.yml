@@ -30,6 +30,12 @@ jobs:
   grcov:
     runs-on: ubuntu-latest
     
+    services:
+     mongodb:
+       image: mongo:4.2.10-bionic
+       ports:
+         - 27017:27017
+    
     steps:
       - uses: actions/checkout@v2
 
