@@ -17,4 +17,4 @@ jobs:
     - name: crates login
       run: cargo login ${{ secrets.CRATES }}
     - name: publish
-      run: cargo publish
+      run: cargo publish --manifest-path meshuganah\Cargo.toml
