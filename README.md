@@ -20,7 +20,12 @@ let me = Species {
             taxonomy: "some_taxonomy".to_string(),
 };
 
-let repository = GenericRepository::<Species>::new().await;
+let database = mongodb::Client::with_uri_str("mongodb://localhost:27017/")
+            .await
+            .unwrap()
+            .database("database_name");
+
+let repository = GenericRepository::<Species>::new(database).await;
 
 // Inserting a document
 repository.add_item(None, me).await;
