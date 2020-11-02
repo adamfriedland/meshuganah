@@ -1,5 +1,9 @@
 <h1 align="center">Meshuganah</h1>
 <div align="center">
+
+[![crates.io version][1]][2] [![downloads][3]][4] 
+</div>
+<div align="center">
     <strong>A strongly typed ODM for the official Mongodb Rust driver, providing an easy to use abstraction.</strong>
 </div>
 <br />
@@ -37,3 +41,10 @@ while let Some(item) = cursor.next().await {
 - Migrations
 - Indexing
 - Extending more of the base client in a type safe way
+
+
+
+[1]: https://img.shields.io/crates/v/meshuganah.svg?style=flat-square
+[2]: https://crates.io/crates/meshuganah
+[3]: https://img.shields.io/crates/d/meshuganah.svg?style=flat-square
+[4]: https://crates.io/crates/meshuganah
