@@ -1,12 +1,15 @@
 [package]
 authors = ["Adam Friedland <adam.friedland@sage.com>"]
+categories = ["database"]
 description = "A type safe ODM for MongoDB."
 edition = "2018"
+homepage = "https://github.com/adamfriedland/meshuganah"
 keywords = ["mongodb", "odm"]
 license = "MIT"
 name = "meshuganah"
 readme = "../README.md"
-version = "0.1.4"
+repository = "https://github.com/adamfriedland/meshuganah"
+version = "0.1.5"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
