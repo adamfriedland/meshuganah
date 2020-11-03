@@ -11,16 +11,16 @@ env:
 
 jobs:
   test:
+    name:                       coverage
     runs-on:                    ubuntu-latest
-    
+    container:  
+         image:                    xd009642/tarpaulin
+         options:                  --security-opt seccomp=unconfined
     services:
        mongodb:
          image: mongo:4.2.10-bionic
          ports:
            - 27017:27017
-       coverage:
-         image: xd009642/tarpaulin
-         options: --security-opt seccomp=unconfined
 
     steps:
       - name: 					Set ENV for codeclimate
