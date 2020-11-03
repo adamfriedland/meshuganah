@@ -1,3 +1,4 @@
+use env;
 use meshuganah::Model;
 use mongodb::{bson, Database};
 use serde::{Deserialize, Serialize};
@@ -8,7 +9,9 @@ pub struct DatabaseCollectionFixture {
 
 impl DatabaseCollectionFixture {
     pub async fn new() -> Self {
-        let database = mongodb::Client::with_uri_str("mongodb://localhost:27017/")
+        let mongo_host =
+            env::var("MONGODB_HOST").expect("environment variable MONGODB_HOST not defined");
+        let database = mongodb::Client::with_uri_str(mongo_host)
             .await
             .unwrap()
             .database("test");
