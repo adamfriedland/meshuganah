@@ -11,22 +11,25 @@ env:
 
 jobs:
   test:
-    name:                       coverage
-    runs-on:                    ubuntu-latest
-    container:  
-         image:                    xd009642/tarpaulin
-         options:                  --security-opt seccomp=unconfined
     services:
        mongodb:
          image: mongo
          ports:
            - 27017:27017
+    
+    name:                       coverage
+    runs-on:                    ubuntu-latest
+    container:  
+         image:                    xd009642/tarpaulin
+         options:                  --security-opt seccomp=unconfined
 
     steps:
       - name:                   Checkout repository
         uses:                   actions/checkout@v2
 
       - name:                   Generate code coverage
+        env:                    
+          MONGODB_HOST:           mongodb://localhost:27017/
         run: |
             cargo +nightly tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
 
