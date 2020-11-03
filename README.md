@@ -2,7 +2,6 @@
 <div align="center">
 
 [![crates.io version][1]][2] [![downloads][3]][4]
-[![Coverage Status](https://coveralls.io/repos/github/adamfriedland/meshuganah/badge.svg?branch=master)](https://coveralls.io/github/adamfriedland/meshuganah?branch=master)
 </div>
 <div align="center">
     <strong>A strongly typed ODM for the official Mongodb Rust driver, providing an easy to use abstraction.</strong>
