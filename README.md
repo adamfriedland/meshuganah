@@ -13,6 +13,29 @@ use meshuganah::GenericRepository;
 use meshuganah::RepositoryTrait;
 use futures::stream::StreamExt;
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Species {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<bson::oid::ObjectId>,
+    pub name: String,
+    pub category: String,
+    pub taxonomy: String,
+}
+
+unsafe impl Send for Species {}
+
+impl Model for Species {
+    const COLLECTION_NAME: &'static str = "species";
+
+    fn get_id(&self) -> Option<bson::oid::ObjectId> {
+        self.id.clone()
+    }
+
+    fn set_id(&mut self, oid: bson::oid::ObjectId) {
+        self.id = Some(oid);
+    }
+}
+
 let me = Species {
             id: None,
             name: "some_name".to_string(),
