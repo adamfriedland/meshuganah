@@ -11,6 +11,8 @@
 ```rust ,no_run
 use meshuganah::GenericRepository;
 use meshuganah::RepositoryTrait;
+use serde::{Deserialize, Serialize};
+use mongodb::bson;
 use futures::stream::StreamExt;
 
 #[derive(Debug, Deserialize, Serialize)]
