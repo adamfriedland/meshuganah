@@ -23,9 +23,14 @@ jobs:
          image:                    xd009642/tarpaulin
          options:                  --security-opt seccomp=unconfined
 
-    steps:
+    steps:          
       - name:                   Checkout repository
         uses:                   actions/checkout@v2
+        
+      - name: Set rust defualt to nightly
+        run: |
+          rustup default nightly
+          rustup update
 
       - name:                   Generate code coverage
         env:                    
