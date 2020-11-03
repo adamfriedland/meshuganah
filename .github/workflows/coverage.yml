@@ -18,16 +18,11 @@ jobs:
          options:                  --security-opt seccomp=unconfined
     services:
        mongodb:
-         image: mongo:4.2.10-bionic
+         image: mongo
          ports:
            - 27017:27017
 
     steps:
-      - name: 					Set ENV for codeclimate
-        run: |
-          rustup default nightly
-          rustup update
-
       - name:                   Checkout repository
         uses:                   actions/checkout@v2
 
